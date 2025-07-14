@@ -134,31 +134,40 @@ function handleButtonClick(id) {
 // 3. 답변 버튼 클릭 처리 ('예' 또는 '아니오')
 // 3. 답변 버튼 클릭 처리 ('예' 또는 '아니오')
 function handleAnswer(answer) {
-    // 답변 처리 로직 (여기서는 단순히 버튼을 숨기는 역할만)
     console.log(`Question ID: ${currentQuestionId}, Answer: ${answer}`);
 
-    // --- 추가된 부분: Google Apps Script로 데이터 전송 ---
     const dataToSend = {
         question_id: currentQuestionId,
         user_answer: answer
     };
 
+    // 데이터를 URL-encoded 형식으로 변환
+    const urlEncodedData = new URLSearchParams(dataToSend).toString();
+
     fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        mode: 'no-cors', // CORS 문제를 피하기 위해 no-cors 모드 사용
+        // mode: 'cors' (명시하지 않으면 기본값이 cors입니다)
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded', // 변경된 Content-Type
         },
-        body: JSON.stringify(dataToSend)
+        body: urlEncodedData // URL-encoded 데이터를 전송
     })
     .then(response => {
-        // no-cors 모드에서는 응답을 직접 읽을 수 없지만, 요청이 성공했는지 콘솔에 기록할 수 있습니다.
-        console.log('Data sent to Google Apps Script (no-cors mode). Check Google Sheet.');
+        if (!response.ok) {
+            // 응답이 성공적이지 않으면 에러 발생
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // Google Apps Script가 JSON을 반환한다고 가정
+        return response.json();
+    })
+    .then(data => {
+        console.log('Data sent successfully:', data);
+        // Apps Script에서 반환하는 결과 (예: data.result, data.status 등)를 여기서 확인할 수 있습니다.
+        // 데이터가 스프레드시트에 성공적으로 기록되었는지 확인하는 로직을 추가할 수 있습니다.
     })
     .catch(error => {
         console.error('Error sending data:', error);
     });
-
     // 답변 완료 상태로 변경
     const questionIndex = questions.findIndex(q => q.id === currentQuestionId);
     if (questionIndex !== -1) {
