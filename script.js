@@ -44,6 +44,8 @@ const questions = [
 }
 ];
 
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlx1AMwB-ccZJUuDa8wR4QyM3FfqgMYMxY8rzuMB5QEHh-I_hAJsu-c0RgXbaZVALU/exec";
+
 // HTML 요소 가져오기 (새로운 answer-buttons-container 추가)
 const buttonContainer = document.getElementById('button-container');
 const questionArea = document.getElementById('question-area');
@@ -130,9 +132,32 @@ function handleButtonClick(id) {
 }
 
 // 3. 답변 버튼 클릭 처리 ('예' 또는 '아니오')
+// 3. 답변 버튼 클릭 처리 ('예' 또는 '아니오')
 function handleAnswer(answer) {
     // 답변 처리 로직 (여기서는 단순히 버튼을 숨기는 역할만)
     console.log(`Question ID: ${currentQuestionId}, Answer: ${answer}`);
+
+    // --- 추가된 부분: Google Apps Script로 데이터 전송 ---
+    const dataToSend = {
+        question_id: currentQuestionId,
+        user_answer: answer
+    };
+
+    fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // CORS 문제를 피하기 위해 no-cors 모드 사용
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dataToSend)
+    })
+    .then(response => {
+        // no-cors 모드에서는 응답을 직접 읽을 수 없지만, 요청이 성공했는지 콘솔에 기록할 수 있습니다.
+        console.log('Data sent to Google Apps Script (no-cors mode). Check Google Sheet.');
+    })
+    .catch(error => {
+        console.error('Error sending data:', error);
+    });
 
     // 답변 완료 상태로 변경
     const questionIndex = questions.findIndex(q => q.id === currentQuestionId);
