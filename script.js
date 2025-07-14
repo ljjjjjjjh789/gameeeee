@@ -44,7 +44,7 @@ const questions = [
 }
 ];
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlx1AMwB-ccZJUuDa8wR4QyM3FfqgMYMxY8rzuMB5QEHh-I_hAJsu-c0RgXbaZVALU/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz61uAJN-i37keDTpAcGlcnAfugJSM_hjOIoUdivj_jEZK3FAXt5FLkCVeKbkFXui4z/exec";
 
 // HTML 요소 가져오기 (새로운 answer-buttons-container 추가)
 const buttonContainer = document.getElementById('button-container');
@@ -141,47 +141,47 @@ function handleAnswer(answer) {
         user_answer: answer
     };
 
-    // 데이터를 URL-encoded 형식으로 변환
+    // 데이터를 URL-encoded 문자열 형식으로 변환합니다.
     const urlEncodedData = new URLSearchParams(dataToSend).toString();
 
     fetch(APPS_SCRIPT_URL, {
         method: 'POST',
-        // mode: 'cors' (명시하지 않으면 기본값이 cors입니다)
+        // mode: 'cors'를 명시하지 않아도 기본값이 'cors'이지만, 명시해도 됩니다.
+        // 이 모드에서는 서버로부터의 응답을 받을 수 있으며, CORS 정책을 따릅니다.
+        // 따라서 Apps Script에서 'Access-Control-Allow-Origin' 헤더를 보내줘야 합니다.
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded', // 변경된 Content-Type
+            'Content-Type': 'application/x-www-form-urlencoded', // <-- 이 부분을 이렇게 변경!
         },
-        body: urlEncodedData // URL-encoded 데이터를 전송
+        body: urlEncodedData // <-- 데이터를 URL-encoded 형식으로 전송!
     })
     .then(response => {
+        // 네트워크 응답이 성공적인지 확인 (HTTP 상태 코드 200번대)
         if (!response.ok) {
-            // 응답이 성공적이지 않으면 에러 발생
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP 오류! 상태: ${response.status}`);
         }
-        // Google Apps Script가 JSON을 반환한다고 가정
+        // Apps Script가 JSON 응답을 보낼 것이므로 JSON으로 파싱합니다.
         return response.json();
     })
     .then(data => {
-        console.log('Data sent successfully:', data);
-        // Apps Script에서 반환하는 결과 (예: data.result, data.status 등)를 여기서 확인할 수 있습니다.
-        // 데이터가 스프레드시트에 성공적으로 기록되었는지 확인하는 로직을 추가할 수 있습니다.
+        console.log('데이터 전송 성공:', data);
+        // Apps Script에서 'result: "success"'와 같은 응답을 보냈을 때 여기서 확인할 수 있습니다.
+        // 필요하다면 성공 메시지를 사용자에게 보여줄 수 있습니다.
     })
     .catch(error => {
-        console.error('Error sending data:', error);
+        console.error('데이터 전송 중 오류 발생:', error);
+        // 오류 메시지를 사용자에게 보여줄 수 있습니다.
     });
-    // 답변 완료 상태로 변경
+
+    // 답변 완료 상태로 변경 및 UI 업데이트 (기존 코드 유지)
     const questionIndex = questions.findIndex(q => q.id === currentQuestionId);
     if (questionIndex !== -1) {
         questions[questionIndex].answered = true;
     }
 
-    // 질문 영역 숨기고 초기 버튼 다시 표시
     questionArea.style.display = 'none';
-    buttonContainer.style.display = 'grid'; // grid로 다시 표시
-
-    // 버튼 다시 생성하여 답변된 버튼 제거
+    buttonContainer.style.display = 'grid';
     createGameButtons();
 }
-
 // 4. 게임 종료 조건 확인
 function checkGameEnd() {
     const allAnswered = questions.every(q => q.answered);
